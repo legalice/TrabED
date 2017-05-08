@@ -20,11 +20,13 @@
 
 #include "pilha.h"
 // ______________________________
-
 //VARIAVEIS GLOBAIS
+
+
 const float FPS = 60; //frequencia de atualização da tela
 const int TELA_LARGURA = 800;
 const int TELA_ALTURA = 600;
+bool musica_estado = true;
 int mouse;
 
 //display
@@ -36,6 +38,9 @@ ALLEGRO_TIMER *timer = NULL;// temporizador de atualização da tela do jogo
 ALLEGRO_BITMAP *janela_icone = NULL;
 ALLEGRO_BITMAP *bg_main1 = NULL;
 
+//Audio
+ALLEGRO_SAMPLE *musica = NULL;
+ALLEGRO_SAMPLE_INSTANCE *musica_instancia = NULL;
 
 
 // ______________________________
@@ -91,8 +96,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-
-
+	//JANELA
 
 	janela = al_create_display(TELA_LARGURA, TELA_ALTURA);// cria janela
 	//caso nao inicialize a janela
@@ -102,7 +106,21 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	al_set_window_title(janela, "Fábrica de Bolos"); //titulo da janela
-	//al_set_display_icon(janela, janela_icone); //carrega o icone do jogo na janela
+	al_set_display_icon(janela, janela_icone); //carrega o icone do jogo na janela
+
+	//AUDIO
+	al_reserve_samples(2); //quantos sons podem tocar AO MESMO TEMPO?
+	musica = al_load_sample("../sons/caketown.ogg");
+	if (!musica){
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize musica",
+			NULL, ALLEGRO_MESSAGEBOX_ERROR);
+		return -1;
+	}
+
+	musica_instancia = al_create_sample_instance(musica);
+	al_set_sample_instance_playmode(musica_instancia, ALLEGRO_PLAYMODE_LOOP);
+	al_attach_sample_instance_to_mixer(musica_instancia, al_get_default_mixer());
+
 
 	 // _____________________________________________________________
 
@@ -117,13 +135,11 @@ int main(int argc, char **argv) {
 		//al_clear_to_color(al_map_rgb(255, 0, 255));
 		//al_set_target_bitmap(al_get_backbuffer(display));
 		//al_register_event_source(event_queue, al_get_display_event_source(display));
-		//al_clear_to_color(al_map_rgb(0, 0, 0));
-		//al_flip_display();
 
 
 	eventos_fila = al_create_event_queue(); //criacao da fila de eventos
 	if (!eventos_fila) {
-		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize janela",
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize eventos fila",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return -1;
 	}
@@ -134,11 +150,14 @@ int main(int argc, char **argv) {
 	al_register_event_source(eventos_fila, al_get_mouse_event_source()); //--evento do mouse
 	al_register_event_source(eventos_fila, al_get_timer_event_source(timer));//--evento do timer
 
-																				 //LOOP PRINCIPAL
+	//Coisas antes da repeticao do loop
 	al_set_target_backbuffer(janela);
 	al_flip_display();
-	al_start_timer(timer);
+	al_start_timer(timer); //timer do FPS começa
+	al_set_mixer_gain(al_get_default_mixer(), 1.0); //amplificador da musica
+	al_play_sample_instance(musica_instancia); //da play na musica
 
+	//LOOP PRINCIPAL
 	while (1){
 		ALLEGRO_EVENT evento; //o alegro é orientado a eventos, essa é a variavel evento
 		al_wait_for_event(eventos_fila, &evento); //coloca um novo evento na fila de eventos, para então executar o while
@@ -149,20 +168,22 @@ int main(int argc, char **argv) {
 
 
 		if (evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-			break; 
+			break;
+			//colocar destrutores
 		}
 
-		if (redraw && al_is_event_queue_empty(eventos_fila)) {
-			redraw = false;
-			al_draw_scaled_bitmap(bg_main1, 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
-			//al_draw_bitmap(bg_main1, 0, 0, 0);
-			//al_clear_to_color(al_map_rgb(0, 0, 0));
-			al_flip_display();
-		}
 
 		if (evento.type == ALLEGRO_EVENT_KEY_DOWN) {
 			if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
 				break; 
+			}
+		}
+
+		if (evento.type == ALLEGRO_EVENT_KEY_UP) {
+			if (evento.keyboard.keycode == ALLEGRO_KEY_M) {
+				//toca ou para musiquinha
+				redraw = true;
+				musica_estado = (!musica_estado);
 			}
 		}
 
@@ -174,8 +195,29 @@ int main(int argc, char **argv) {
 				mouse = evento.mouse.button;
 		}
 
-		al_flip_display();
+		//ultimo metodo do while
+		if (redraw && al_is_event_queue_empty(eventos_fila)) {
+			redraw = false;
+
+			if (musica_estado) {
+				al_set_sample_instance_gain(musica_instancia, 1.0);
+			}
+			else {
+				al_set_sample_instance_gain(musica_instancia, 0.0);
+			}
+
+			al_draw_scaled_bitmap(bg_main1, 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
+			//al_draw_bitmap(bg_main1, 0, 0, 0);
+			//al_clear_to_color(al_map_rgb(0, 0, 0));
+
+			al_flip_display();
+		}
+
+		//al_flip_display(); //colocar isso faz ficar lento, melhor dar redraw
 	}
+
+
+		//DESTRUTORES
 
 		al_destroy_bitmap(bg_main1);//
 		al_destroy_bitmap(janela_icone);//

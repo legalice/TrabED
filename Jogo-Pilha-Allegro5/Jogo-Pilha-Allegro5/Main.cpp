@@ -27,16 +27,26 @@ const float FPS = 60; //frequencia de atualização da tela
 const int TELA_LARGURA = 800;
 const int TELA_ALTURA = 600;
 bool musica_estado = true;
-int mouse;
+int mouse; //clicou ou não no mouse
+bool bg_menu_trocar = false; //trocar o fundo ao passar o mouse sobre um botao do menu
+int bg_menu_trocar_ordem; //ordem do bg_menu_imagens[4]
+int tela_estado; //onde a tela está
 
 //display
 ALLEGRO_DISPLAY *janela = NULL; //janela para o jogo todo
 ALLEGRO_EVENT_QUEUE *eventos_fila = NULL; //cria fila de eventos
 ALLEGRO_TIMER *timer = NULL;// temporizador de atualização da tela do jogo
 
-//imagens
+//------imagens
 ALLEGRO_BITMAP *janela_icone = NULL;
-ALLEGRO_BITMAP *bg_main1 = NULL;
+
+//background
+ALLEGRO_BITMAP *bg_menu = NULL;
+ALLEGRO_BITMAP *bg_menu_jogar = NULL;
+ALLEGRO_BITMAP *bg_menu_opcoes = NULL;
+ALLEGRO_BITMAP *bg_menu_creditos = NULL;
+ALLEGRO_BITMAP *bg_menu_sair = NULL;
+ALLEGRO_BITMAP *bg_menu_imagens[5];
 
 //Audio
 ALLEGRO_SAMPLE *musica = NULL;
@@ -82,12 +92,51 @@ int main(int argc, char **argv) {
 
 	//INICIALIZAR IMAGENS
 
-	bg_main1 = al_load_bitmap("../imagens/main1.png");
-	if (!bg_main1) {
-		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize bg_main!",
+	bg_menu = al_load_bitmap("../imagens/bg_menu.jpg");
+	if (bg_menu) {
+		bg_menu_imagens[0] = bg_menu;
+	} else {
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize bg_menu!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return -1;
 	}
+
+	bg_menu_jogar = al_load_bitmap("../imagens/bg_menu_jogar.jpg");
+	if (bg_menu_jogar) {
+		bg_menu_imagens[1] = bg_menu_jogar;
+	} else {
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize bg_menu_jogar!",
+			NULL, ALLEGRO_MESSAGEBOX_ERROR);
+		return -1;
+	}
+
+	bg_menu_opcoes = al_load_bitmap("../imagens/bg_menu_opcoes.jpg");
+	if (bg_menu_opcoes) {
+		bg_menu_imagens[2] = bg_menu_opcoes;
+	} else {
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize bg_menu_opcoes!",
+			NULL, ALLEGRO_MESSAGEBOX_ERROR);
+		return -1;
+	}
+
+	bg_menu_creditos = al_load_bitmap("../imagens/bg_menu_creditos.jpg");
+	if (bg_menu_creditos) {
+		bg_menu_imagens[3] = bg_menu_creditos;
+	} else {
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize bg_menu_creditos!",
+			NULL, ALLEGRO_MESSAGEBOX_ERROR);
+		return -1;
+	}
+
+	bg_menu_sair = al_load_bitmap("../imagens/bg_menu_sair.jpg");
+	if (bg_menu_sair) {
+		bg_menu_imagens[4] = bg_menu_sair;
+	} else {
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize bg_menu_sair!",
+			NULL, ALLEGRO_MESSAGEBOX_ERROR);
+		return -1;
+	}
+
 
 	janela_icone = al_load_bitmap("../imagens/janela_icone.png");
 	if (!janela_icone) {
@@ -187,13 +236,74 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (evento.type == ALLEGRO_EVENT_MOUSE_AXES) {
-				//movimentação do mouse
+		if (evento.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+			mouse = evento.mouse.button;
+
+			if (mouse == 1 && evento.mouse.x > 19 && evento.mouse.x < 195 && evento.mouse.y > 480 && evento.mouse.y < 541) {//jogar
+
+				al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE JOGAR",
+					NULL, ALLEGRO_MESSAGEBOX_WARN);
+				mouse = 0;
+				redraw = true;
+			}
+			else if (mouse == 1 && evento.mouse.x > 215 && evento.mouse.x < 397 && evento.mouse.y > 480 && evento.mouse.y < 541) {//opcoes
+				al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE OPCOES",
+					NULL, ALLEGRO_MESSAGEBOX_WARN);
+				mouse = 0;
+				redraw = true;
+			}
+			else if (mouse == 1 && evento.mouse.x > 418 && evento.mouse.x < 595 && evento.mouse.y > 480 && evento.mouse.y < 541) {//creditos
+				al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE CREDITOS",
+					NULL, ALLEGRO_MESSAGEBOX_WARN);
+				mouse = 0;
+				redraw = true;
+			}
+			else if (mouse == 1 && evento.mouse.x > 611 && evento.mouse.x < 791 && evento.mouse.y > 480 && evento.mouse.y < 541) {//sair
+				al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE SAIR",
+					NULL, ALLEGRO_MESSAGEBOX_WARN);
+				mouse = 0;
+				redraw = true;
+			}
 		}
 
-		if (evento.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
-				mouse = evento.mouse.button;
+		if (evento.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP) {
+			mouse = 0;
+
 		}
+		if (evento.type == ALLEGRO_EVENT_MOUSE_AXES) {
+			if (evento.mouse.x > 19 && evento.mouse.x < 195 && evento.mouse.y > 480 && evento.mouse.y < 541) {//jogar
+				redraw = true;
+				bg_menu_trocar = true; //vai trocar o fundo pora causa do botao
+				bg_menu_trocar_ordem = 1; //imagem que vai trocar
+
+			}
+			else if (evento.mouse.x > 215 && evento.mouse.x < 397 && evento.mouse.y > 480 && evento.mouse.y < 541) {//opcoes
+				bg_menu_trocar = true;
+				bg_menu_trocar_ordem = 2;
+				redraw = true;
+
+			}
+			else if (evento.mouse.x > 418 && evento.mouse.x < 595 && evento.mouse.y > 480 && evento.mouse.y < 541) {//creditos
+				redraw = true;
+				bg_menu_trocar = true;
+				bg_menu_trocar_ordem = 3;
+
+			}
+			else if (evento.mouse.x > 611 && evento.mouse.x < 791 && evento.mouse.y > 480 && evento.mouse.y < 541) {//sair
+				redraw = true;
+				bg_menu_trocar = true;
+				bg_menu_trocar_ordem = 4;
+
+			}
+			else {
+				redraw = true;
+				bg_menu_trocar = true;
+				bg_menu_trocar_ordem = 0;
+			}
+		}
+
+		//clique no menu
+		
 
 		//ultimo metodo do while
 		if (redraw && al_is_event_queue_empty(eventos_fila)) {
@@ -206,20 +316,33 @@ int main(int argc, char **argv) {
 				al_set_sample_instance_gain(musica_instancia, 0.0);
 			}
 
-			al_draw_scaled_bitmap(bg_main1, 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
-			//al_draw_bitmap(bg_main1, 0, 0, 0);
-			//al_clear_to_color(al_map_rgb(0, 0, 0));
+			if (bg_menu_trocar) {
+				al_draw_scaled_bitmap(bg_menu_imagens[bg_menu_trocar_ordem], 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
+			}
+			else {
+				al_draw_scaled_bitmap(bg_menu, 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
+			}
 
+
+			
+			//al_clear_to_color(al_map_rgb(0, 0, 0));
 			al_flip_display();
 		}
 
 		//al_flip_display(); //colocar isso faz ficar lento, melhor dar redraw
 	}
 
-
 		//DESTRUTORES
-
-		al_destroy_bitmap(bg_main1);//
+		
+		al_destroy_sample_instance(musica_instancia);
+		al_destroy_sample(musica);
+		al_destroy_bitmap(bg_menu);
+		al_destroy_bitmap(bg_menu_jogar);
+		al_destroy_bitmap(bg_menu_opcoes);
+		al_destroy_bitmap(bg_menu_creditos);
+		al_destroy_bitmap(bg_menu_sair);
+		//al_destroy_bitmap();
+		//al_destroy_bitmap();
 		al_destroy_bitmap(janela_icone);//
 		al_destroy_timer(timer);//
 		al_destroy_display(janela);//

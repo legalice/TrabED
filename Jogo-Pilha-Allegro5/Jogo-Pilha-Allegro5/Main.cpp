@@ -30,9 +30,11 @@ const int TELA_LARGURA = 800;
 const int TELA_ALTURA = 600;
 bool musica_estado = true; //musica ligada ou nao
 int mouse; //clicou ou não no mouse
-bool bg_menu_trocar = false; //trocar o fundo ao passar o mouse sobre um botao do menu
+//bool bg_menu_trocar = false; //trocar o fundo ao passar o mouse sobre um botao do menu
 int bg_menu_trocar_ordem; //ordem do bg_menu_imagens[4]
 int tela_estado = 0; //em qual tela estamos
+//int desenha_fundo = false;
+int pedido_bolo[4];
 
 //display
 ALLEGRO_DISPLAY *janela = NULL; //janela para o jogo todo
@@ -50,8 +52,15 @@ ALLEGRO_BITMAP *bg_menu_creditos = NULL;
 ALLEGRO_BITMAP *bg_menu_sair = NULL;
 ALLEGRO_BITMAP *bg_menu_imagens[5];
 
+//backgrounds
+ALLEGRO_BITMAP *backgrounds[5];
+ALLEGRO_BITMAP *bg_instrucoes = NULL;
+ALLEGRO_BITMAP *bg_bolo_modelo = NULL;
+ALLEGRO_BITMAP *bg_opcoes = NULL;
+ALLEGRO_BITMAP *bg_creditos = NULL;
+ALLEGRO_BITMAP *bg_jogo_cenario = NULL;
+
 //jogo imagens
-ALLEGRO_BITMAP *jogo_cenario = NULL;
 
 ALLEGRO_BITMAP *jogo_bolo_base1 = NULL;
 ALLEGRO_BITMAP *jogo_bolo_base2 = NULL;
@@ -88,6 +97,7 @@ ALLEGRO_SAMPLE_INSTANCE *musica_instancia = NULL;
 bool inicializar_addons();
 bool inicializar_imagens();
 void destruidores();
+void gerador_bolo_modelo();
 
 // ______________________________
 
@@ -164,7 +174,6 @@ bool inicializar_addons() {
 }
 
 bool inicializar_imagens() {
-
 	//MENU INICIAL
 
 	bg_menu = al_load_bitmap("../imagens/bg_menu.png");
@@ -226,45 +235,82 @@ bool inicializar_imagens() {
 		return false;
 	}
 
-	//imagens do jogo
+	//backgrounds
 
-	jogo_cenario = al_load_bitmap("../imagens/jogo_cenario.png");
-	if (!jogo_cenario) {
-		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_cenario!",
+	bg_instrucoes = al_load_bitmap("../imagens/instrucoes.png");
+	if (bg_instrucoes) {
+		backgrounds[1] = bg_instrucoes;
+	}
+	else {
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image bg_instrucoes!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	//bolo base
-	jogo_bolo_base1 = al_load_bitmap("../imagens/bolo1.png");
+	bg_bolo_modelo = al_load_bitmap("../imagens/tela_bolo_modelo.png");
+	if (bg_bolo_modelo) {
+		backgrounds[2] = bg_bolo_modelo;
+	}
+	else {
+			al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image bg_bolo_modelo!",
+				NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			return false;
+		}
+
+	bg_jogo_cenario = al_load_bitmap("../imagens/jogo_cenario.png");
+	if (bg_jogo_cenario) {
+			backgrounds[3] = bg_jogo_cenario;
+		}
+	else {
+			al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image bg_jogo_cenario!",
+				NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			return false;
+		}
+
+	//falta tela 4 de opções
+
+	bg_creditos = al_load_bitmap("../imagens/creditos.png");
+	if (bg_creditos) {
+		backgrounds[5] = bg_creditos;
+	}
+	else {
+		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image bg_creditos!",
+			NULL, ALLEGRO_MESSAGEBOX_ERROR);
+		return false;
+	}
+
+	//imagens do jogo
+
+		//bolo base
+	jogo_bolo_base1 = al_load_bitmap("../imagens/bolo_base1.png");
 	if (!jogo_bolo_base1) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_base1!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	jogo_bolo_base2 = al_load_bitmap("../imagens/bolo2.png");
+	jogo_bolo_base2 = al_load_bitmap("../imagens/bolo_base2.png");
 	if (!jogo_bolo_base2) {
-		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_base2!",
-			NULL, ALLEGRO_MESSAGEBOX_ERROR);
-		return false;
-	}
+			al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_base2!",
+				NULL, ALLEGRO_MESSAGEBOX_ERROR);
+			return false;
+		}
 
-	jogo_bolo_base3 = al_load_bitmap("../imagens/bolo3.png");
+	jogo_bolo_base3 = al_load_bitmap("../imagens/bolo_base3.png");
 	if (!jogo_bolo_base3) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_base3!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
-		return false;
+			return false;
 	}
 
-	jogo_bolo_base4 = al_load_bitmap("../imagens/bolo4.png");
+	jogo_bolo_base4 = al_load_bitmap("../imagens/bolo_base4.png");
 	if (!jogo_bolo_base4) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_base4!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	jogo_bolo_base5 = al_load_bitmap("../imagens/bolo5.png");
+	jogo_bolo_base5 = al_load_bitmap("../imagens/bolo_base5.png");
 	if (!jogo_bolo_base5) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_base5!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
@@ -290,7 +336,7 @@ bool inicializar_imagens() {
 	if (!jogo_recheio3) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image recheio3!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
-		return false;
+			return false;
 	}
 
 	jogo_recheio4 = al_load_bitmap("../imagens/recheio4.png");
@@ -308,43 +354,42 @@ bool inicializar_imagens() {
 	}
 
 	//bolo de cima
-	jogo_bolo_cima1 = al_load_bitmap("../imagens/bolo1.png");
+	jogo_bolo_cima1 = al_load_bitmap("../imagens/bolo_cima1.png");
 	if (!jogo_bolo_base1) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_base1!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	jogo_bolo_cima2 = al_load_bitmap("../imagens/bolo2.png");
+	jogo_bolo_cima2 = al_load_bitmap("../imagens/bolo_cima2.png");
 	if (!jogo_bolo_base2) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_cima2!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	jogo_bolo_cima3 = al_load_bitmap("../imagens/bolo3.png");
+	jogo_bolo_cima3 = al_load_bitmap("../imagens/bolo_cima3.png");
 	if (!jogo_bolo_cima3) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_cima3!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	jogo_bolo_cima4 = al_load_bitmap("../imagens/bolo4.png");
+	jogo_bolo_cima4 = al_load_bitmap("../imagens/bolo_cima4.png");
 	if (!jogo_bolo_cima4) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_cima4!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	jogo_bolo_cima5 = al_load_bitmap("../imagens/bolo5.png");
+	jogo_bolo_cima5 = al_load_bitmap("../imagens/bolo_cima5.png");
 	if (!jogo_bolo_cima5) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image jogo_bolo_cima5!",
 			NULL, ALLEGRO_MESSAGEBOX_ERROR);
 		return false;
 	}
 
-	//cobertura
-
+		//cobertura
 	jogo_cobertura1 = al_load_bitmap("../imagens/cobertura1.png");
 	if (!jogo_cobertura1) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize image cobertura1!",
@@ -386,9 +431,6 @@ bool inicializar_imagens() {
 void destruidores() {
 	//IMAGENS
 
-	//janela
-	al_destroy_bitmap(janela_icone);
-
 	//menu inicial
 	al_destroy_bitmap(bg_menu);
 	al_destroy_bitmap(bg_menu_jogar);
@@ -397,7 +439,7 @@ void destruidores() {
 	al_destroy_bitmap(bg_menu_sair);
 
 	//jogo
-	al_destroy_bitmap(jogo_cenario);
+	al_destroy_bitmap(bg_jogo_cenario);
 	al_destroy_bitmap(jogo_bolo_base1);
 	al_destroy_bitmap(jogo_bolo_base2);
 	al_destroy_bitmap(jogo_bolo_base3);
@@ -427,22 +469,117 @@ void destruidores() {
 	al_destroy_sample(musica);
 	
 	//OUTROS
-
+	
 	al_destroy_timer(timer);
 	al_destroy_event_queue(eventos_fila);
+	
+	//janela
 	al_destroy_display(janela);
-
+	al_destroy_bitmap(janela_icone);
 }
 
-void jogo() {
+void gerador_bolo_modelo() {
+	srand(time(NULL));
+
+	pedido_bolo[0] = rand()%5; //0 a 4 - base
+	pedido_bolo[1] = rand()%5 + 5; //5 a 9 - recheio
+	pedido_bolo[2] = rand()%5 + 10; //10 a 14 - cima
+	pedido_bolo[3] = rand()%5 + 15; //14 a 19 - cobertura
+
+	//base
+
+	if (pedido_bolo[0] == 0) {
+		al_draw_bitmap(jogo_bolo_base1, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_bolo_base1)/2), 290, 0);
+	}
+	else if (pedido_bolo[0] == 1) {
+		al_draw_bitmap(jogo_bolo_base2, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_bolo_base2)/2), 290, 0);
+	}
+	else if (pedido_bolo[0] == 2) {
+		al_draw_bitmap(jogo_bolo_base3, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_bolo_base3)/2), 290, 0);
+	}
+	else if (pedido_bolo[0] == 3) {
+		al_draw_bitmap(jogo_bolo_base4, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_bolo_base4)/2), 290, 0);
+	}
+	else if (pedido_bolo[0] == 4) {
+		al_draw_bitmap(jogo_bolo_base5, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_bolo_base5)/2), 290, 0);
+	}
+
+	//recheio
+	if (pedido_bolo[1] == 5) {
+		al_draw_bitmap(jogo_recheio1, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio1) / 2), 260, 0);
+	}
+	else if (pedido_bolo[1] == 6) {
+		al_draw_bitmap(jogo_recheio2, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio2) / 2), 260, 0);
+	}
+	else if (pedido_bolo[1] == 7) {
+		al_draw_bitmap(jogo_recheio3, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio3) / 2), 260, 0);
+	}
+	else if (pedido_bolo[1] == 8) {
+		al_draw_bitmap(jogo_recheio4, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio4) / 2), 260, 0);
+	}
+	else if (pedido_bolo[1] == 9) {
+		al_draw_bitmap(jogo_recheio5, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio5) / 2), 260, 0);
+	}
+
+	//cima
+
+	if (pedido_bolo[2] == 10) {
+		al_draw_bitmap(jogo_bolo_cima1, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio5) / 2), 200, 0);
+	}
+	else if (pedido_bolo[2] == 11) {
+		al_draw_bitmap(jogo_bolo_cima2, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio5) / 2), 200, 0);
+	}
+	else if (pedido_bolo[2] == 12) {
+		al_draw_bitmap(jogo_bolo_cima3, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio5) / 2), 200, 0);
+	}
+	else if (pedido_bolo[2] == 13) {
+		al_draw_bitmap(jogo_bolo_cima4, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio5) / 2), 200, 0);
+	}
+	else if (pedido_bolo[2] == 14) {
+		al_draw_bitmap(jogo_bolo_cima5, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_recheio5) / 2), 200, 0);
+	}
+
+	//cobertura
+	if (pedido_bolo[3] == 15) {
+		al_draw_bitmap(jogo_cobertura1, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_cobertura1) / 2), 160, 0);
+	}
+	else if (pedido_bolo[3] == 16) {
+		al_draw_bitmap(jogo_cobertura2, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_cobertura2) / 2), 160, 0);
+	}
+	else if (pedido_bolo[3] == 17) {
+		al_draw_bitmap(jogo_cobertura3, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_cobertura3) / 2), 160, 0);
+	}
+	else if (pedido_bolo[3] == 18) {
+		al_draw_bitmap(jogo_cobertura4, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_cobertura4) / 2), 160, 0);
+	}
+	else if (pedido_bolo[3] == 19) {
+		al_draw_bitmap(jogo_cobertura5, (TELA_LARGURA / 2) - (al_get_bitmap_width(jogo_cobertura5) / 2), 160, 0);
+	}
+	
+}
+
+void jogo(int tempo_jogo) {
+	al_set_target_backbuffer(janela);
+	al_clear_to_color(al_map_rgb(0, 0, 0));
+
+	//al_draw_scaled_bitmap(, 0, 0, 800, 600, 0, 0, al_get_display_width(tela), al_get_display_height(tela), 0);
+	bg_jogo_cenario;
+
+
+
 }
 
 int main(int argc, char **argv) {
+	
 	
 	bool redraw = false;
 
 	inicializar_addons();
 	inicializar_imagens(); 
+	if (!inicializar_imagens()) {
+		destruidores();
+		return 0;
+	}
 	
 	//JANELA
 	janela = al_create_display(TELA_LARGURA, TELA_ALTURA);// cria janela
@@ -476,12 +613,6 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-		//al_set_target_bitmap(bouncer);
-		//al_clear_to_color(al_map_rgb(255, 0, 255));
-		//al_set_target_bitmap(al_get_backbuffer(display));
-		//al_register_event_source(event_queue, al_get_display_event_source(display));
-
-
 	eventos_fila = al_create_event_queue(); //criacao da fila de eventos
 	if (!eventos_fila) {
 		al_show_native_message_box(janela, "Error", "Error", "Failed to initialize eventos fila",
@@ -511,12 +642,10 @@ int main(int argc, char **argv) {
 				redraw = true;
 		}
 
-
 		if (evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-			break;
-			//colocar destrutores
+			destruidores();
+			exit(EXIT_SUCCESS);
 		}
-
 
 		if (evento.type == ALLEGRO_EVENT_KEY_DOWN) {
 			if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
@@ -535,75 +664,94 @@ int main(int argc, char **argv) {
 		if (evento.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
 			mouse = evento.mouse.button;
 
-			if (mouse == 1 && evento.mouse.x > 19 && evento.mouse.x < 195 && evento.mouse.y > 480 && evento.mouse.y < 541) {//jogar
-				tela_estado = 0;
-
+			if (mouse == 1 && evento.mouse.x > 19 && evento.mouse.x < 195 && evento.mouse.y > 480 && evento.mouse.y < 541 && tela_estado == 0) {//jogar
+				tela_estado = 1; //imagem de instruções
+				mouse = 0;
+				redraw = true;
+				//desenha_fundo = true;
+				
 				//al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE JOGAR",
-					//NULL, ALLEGRO_MESSAGEBOX_WARN);
+				//NULL, ALLEGRO_MESSAGEBOX_WARN);
+			}
+			else if (mouse == 1 && evento.mouse.x > 215 && evento.mouse.x < 397 && evento.mouse.y > 480 && evento.mouse.y < 541 && tela_estado == 0) {//opcoes
+				//tela_estado = 4;//tela de opcoes
 				mouse = 0;
 				redraw = true;
-			}
-			else if (mouse == 1 && evento.mouse.x > 215 && evento.mouse.x < 397 && evento.mouse.y > 480 && evento.mouse.y < 541) {//opcoes
-				tela_estado = 1;
+				//desenha_fundo = true;
 				//al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE OPCOES",
-					//NULL, ALLEGRO_MESSAGEBOX_WARN);
+				//NULL, ALLEGRO_MESSAGEBOX_WARN);
+			}
+			else if (mouse == 1 && evento.mouse.x > 418 && evento.mouse.x < 595 && evento.mouse.y > 480 && evento.mouse.y < 541 && tela_estado == 0) {//creditos
+				tela_estado = 5; //tela de creditos
 				mouse = 0;
 				redraw = true;
+				//desenha_fundo = true;
+
+				//al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE CREDITOS",
+				//NULL, ALLEGRO_MESSAGEBOX_WARN);
 			}
-			else if (mouse == 1 && evento.mouse.x > 418 && evento.mouse.x < 595 && evento.mouse.y > 480 && evento.mouse.y < 541) {//creditos
-				tela_estado = 2;
-					//al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE CREDITOS",
-					//NULL, ALLEGRO_MESSAGEBOX_WARN);
+			else if (mouse == 1 && evento.mouse.x > 611 && evento.mouse.x < 791 && evento.mouse.y > 480 && evento.mouse.y < 541 && tela_estado == 0) {//sair	
+				mouse = 0;
+				if (al_show_native_message_box(janela, "Atenção", "Pergunta:", "Tem certeza que deseja sair do jogo?",
+					NULL, ALLEGRO_MESSAGEBOX_OK_CANCEL)) {
+					destruidores();
+					exit(EXIT_SUCCESS);
+				}
+				
+				//redraw = true;
+			}
+			else if(mouse == 1 && tela_estado == 1) {
+				tela_estado = 2; //tela bolo modelo
 				mouse = 0;
 				redraw = true;
+				//desenha_fundo = true;
 			}
-			else if (mouse == 1 && evento.mouse.x > 611 && evento.mouse.x < 791 && evento.mouse.y > 480 && evento.mouse.y < 541) {//sair
-				tela_estado = 3;																												  //al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE CREDITOS",
-				//al_show_native_message_box(janela, "TESTE", "TESTE", "TESTE SAIR",
-					//NULL, ALLEGRO_MESSAGEBOX_WARN);
+			else if (mouse == 1 && tela_estado == 2) {
+				//jogo tela
+				tela_estado = 3;
 				mouse = 0;
 				redraw = true;
+				//desenha_fundo = true;
 			}
+
 		}
 
 		if (evento.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP) {
 			mouse = 0;
 
 		}
+
 		if (evento.type == ALLEGRO_EVENT_MOUSE_AXES) {
 			if (evento.mouse.x > 19 && evento.mouse.x < 195 && evento.mouse.y > 480 && evento.mouse.y < 541) {//jogar
 				redraw = true;
-				bg_menu_trocar = true; //vai trocar o fundo pora causa do botao
+				//bg_menu_trocar = true; //vai trocar o fundo pora causa do botao
 				bg_menu_trocar_ordem = 1; //imagem que vai trocar
 
 			}
 			else if (evento.mouse.x > 215 && evento.mouse.x < 397 && evento.mouse.y > 480 && evento.mouse.y < 541) {//opcoes
-				bg_menu_trocar = true;
+				//bg_menu_trocar = true;
 				bg_menu_trocar_ordem = 2;
 				redraw = true;
 
 			}
 			else if (evento.mouse.x > 418 && evento.mouse.x < 595 && evento.mouse.y > 480 && evento.mouse.y < 541) {//creditos
 				redraw = true;
-				bg_menu_trocar = true;
+				//bg_menu_trocar = true;
 				bg_menu_trocar_ordem = 3;
 
 			}
 			else if (evento.mouse.x > 611 && evento.mouse.x < 791 && evento.mouse.y > 480 && evento.mouse.y < 541) {//sair
 				redraw = true;
-				bg_menu_trocar = true;
+				//bg_menu_trocar = true;
 				bg_menu_trocar_ordem = 4;
 
 			}
 			else {
 				redraw = true;
-				bg_menu_trocar = true;
+				//bg_menu_trocar = true;
 				bg_menu_trocar_ordem = 0;
 			}
 		}
-
-		//clique no menu
-		
 
 		//ultimo metodo do while
 		if (redraw && al_is_event_queue_empty(eventos_fila)) {
@@ -611,33 +759,34 @@ int main(int argc, char **argv) {
 
 			if (musica_estado) {
 				al_set_sample_instance_gain(musica_instancia, 1.0);
-			}
+			} 
 			else {
 				al_set_sample_instance_gain(musica_instancia, 0.0);
 			}
 
-			if (bg_menu_trocar) {
+			if (tela_estado == 0) {
 				al_draw_scaled_bitmap(bg_menu_imagens[bg_menu_trocar_ordem], 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
 			}
 			else {
-				al_draw_scaled_bitmap(bg_menu, 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
+				al_clear_to_color(al_map_rgb(255, 255, 255)); //a imagem do cenario eh meio transparente
+				al_draw_scaled_bitmap(backgrounds[tela_estado], 0, 0, 800, 600, 0, 0, al_get_display_width(janela), al_get_display_height(janela), 0);
 			}
 
+			if (tela_estado == 2) {
+				//al_set_target_backbuffer(janela);
+				gerador_bolo_modelo();
+				//al_rest(10);
+				//tela_estado = 3;
+			}
 
-			
-			//al_clear_to_color(al_map_rgb(0, 0, 0));
 			al_flip_display();
 		}
-
-		//al_flip_display(); //colocar isso faz ficar lento, melhor dar redraw
 	}
 
-		//DESTRUTORES
-		
-		destruidores();
+	//DESTRUTORES
+	destruidores();
 
 		return 0;
 }
-
 
 //FUNÇÕES PRINCIPAIS
